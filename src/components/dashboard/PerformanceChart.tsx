@@ -3,24 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { cn } from "@/lib/utils";
+import { ChartDataPoint } from "@/types/dashboard";
 
 type ChartDataType = "citations" | "traffic" | "conversions";
 
-interface ChartData {
-  month: string;
-  citations: number;
-  traffic: number;
-  conversions: number;
+interface PerformanceChartProps {
+  data: ChartDataPoint[];
 }
-
-const chartData: ChartData[] = [
-  { month: "Jan", citations: 1200, traffic: 8500, conversions: 145 },
-  { month: "Feb", citations: 1450, traffic: 9200, conversions: 167 },
-  { month: "Mar", citations: 1780, traffic: 11200, conversions: 198 },
-  { month: "Apr", citations: 2100, traffic: 13800, conversions: 234 },
-  { month: "May", citations: 2350, traffic: 15600, conversions: 289 },
-  { month: "Jun", citations: 2847, traffic: 18429, conversions: 342 },
-];
 
 const toggleOptions = [
   { id: "citations", label: "AI Citations", color: "#6366f1" },
@@ -28,7 +17,7 @@ const toggleOptions = [
   { id: "conversions", label: "Conversions", color: "#8b5cf6" },
 ] as const;
 
-export const PerformanceChart = () => {
+export const PerformanceChart = ({ data }: PerformanceChartProps) => {
   const [activeToggles, setActiveToggles] = useState<Set<ChartDataType>>(
     new Set(["citations", "traffic", "conversions"])
   );
@@ -80,7 +69,7 @@ export const PerformanceChart = () => {
       <CardContent>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
               <XAxis 
                 dataKey="month" 

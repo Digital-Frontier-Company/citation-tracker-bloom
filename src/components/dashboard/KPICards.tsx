@@ -1,16 +1,29 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Target, BarChart3, Users, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { KPIData } from "@/types/dashboard";
+
+interface KPICardsProps {
+  data: KPIData[];
+}
 
 interface KPICardProps {
   title: string;
   value: string;
   change: number;
-  icon: React.ElementType;
+  iconName: string;
   trend: "up" | "down";
 }
 
-const KPICard = ({ title, value, change, icon: Icon, trend }: KPICardProps) => {
+const iconMap = {
+  Target,
+  BarChart3,
+  Users,
+  Award,
+};
+
+const KPICard = ({ title, value, change, iconName, trend }: KPICardProps) => {
+  const Icon = iconMap[iconName as keyof typeof iconMap] || Target;
   return (
     <Card className="bg-gradient-card border-0 shadow-custom-md hover:shadow-custom-lg transition-all duration-300 group">
       <CardContent className="p-6">
@@ -44,47 +57,22 @@ const KPICard = ({ title, value, change, icon: Icon, trend }: KPICardProps) => {
   );
 };
 
-const kpiData = [
-  {
-    title: "Total AI Citations",
-    value: "2,847",
-    change: 12.5,
-    icon: Target,
-    trend: "up" as const,
-  },
-  {
-    title: "Share of Voice",
-    value: "34.2%",
-    change: 8.1,
-    icon: BarChart3,
-    trend: "up" as const,
-  },
-  {
-    title: "Citation-Driven Traffic",
-    value: "18,429",
-    change: -2.4,
-    icon: Users,
-    trend: "down" as const,
-  },
-  {
-    title: "Citation Quality Score",
-    value: "8.7/10",
-    change: 5.3,
-    icon: Award,
-    trend: "up" as const,
-  },
-];
-
-export const KPICards = () => {
+export const KPICards = ({ data }: KPICardsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {kpiData.map((kpi, index) => (
+      {data.map((kpi, index) => (
         <div 
           key={kpi.title} 
           className="animate-fade-in"
           style={{ animationDelay: `${index * 0.1}s` }}
         >
-          <KPICard {...kpi} />
+          <KPICard
+            title={kpi.title}
+            value={kpi.value}
+            change={kpi.change}
+            iconName={kpi.icon}
+            trend={kpi.trend}
+          />
         </div>
       ))}
     </div>

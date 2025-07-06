@@ -11,62 +11,11 @@ import {
   ExternalLink 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ActivityItem } from "@/types/dashboard";
 
-interface ActivityItem {
-  id: string;
-  type: "citation" | "competitor" | "alert" | "report";
-  title: string;
-  description: string;
-  timestamp: string;
-  status: "positive" | "negative" | "neutral";
-  source?: string;
+interface ActivityFeedProps {
+  activities: ActivityItem[];
 }
-
-const activityData: ActivityItem[] = [
-  {
-    id: "1",
-    type: "citation",
-    title: "New AI citation detected",
-    description: "Your content was cited by ChatGPT in response about Answer Engine Optimization",
-    timestamp: "2 hours ago",
-    status: "positive",
-    source: "ChatGPT"
-  },
-  {
-    id: "2", 
-    type: "competitor",
-    title: "Competitor gained citation",
-    description: "CompetitorX was cited by Google SGE in 3 new responses about AI search",
-    timestamp: "4 hours ago",
-    status: "negative",
-    source: "Google SGE"
-  },
-  {
-    id: "3",
-    type: "alert",
-    title: "Citation opportunity missed",
-    description: "Perplexity cited competitors but not your content for target keyword",
-    timestamp: "6 hours ago",
-    status: "negative"
-  },
-  {
-    id: "4",
-    type: "report",
-    title: "Weekly AEO report ready",
-    description: "Your Answer Engine Optimization performance summary is available",
-    timestamp: "1 day ago",
-    status: "neutral"
-  },
-  {
-    id: "5",
-    type: "citation",
-    title: "High-authority AI citation",
-    description: "Bing Chat cited your content as authoritative source in 12 responses",
-    timestamp: "2 days ago",
-    status: "positive",
-    source: "Bing Chat"
-  }
-];
 
 const getIcon = (type: string, status: string) => {
   switch (type) {
@@ -109,7 +58,7 @@ const getBadgeVariant = (type: string) => {
   }
 };
 
-export const ActivityFeed = () => {
+export const ActivityFeed = ({ activities }: ActivityFeedProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Recent Activity */}
@@ -127,7 +76,7 @@ export const ActivityFeed = () => {
           </CardHeader>
           
           <CardContent className="space-y-4">
-            {activityData.map((item, index) => {
+            {activities.map((item, index) => {
               const Icon = getIcon(item.type, item.status);
               
               return (
