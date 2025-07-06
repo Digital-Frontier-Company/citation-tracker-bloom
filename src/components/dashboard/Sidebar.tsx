@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Link, useLocation } from "react-router-dom";
 import { 
   BarChart3, 
   FileText, 
@@ -18,15 +19,16 @@ interface SidebarProps {
 }
 
 const navigationItems = [
-  { icon: BarChart3, label: "Dashboard", active: true, href: "/" },
-  { icon: Target, label: "Citations", active: false, href: "/citations" },
-  { icon: TrendingUp, label: "Analytics", active: false, href: "/analytics" },
-  { icon: FileText, label: "Reports", active: false, href: "/reports" },
-  { icon: Users, label: "Competitors", active: false, href: "/competitors" },
-  { icon: Settings, label: "Settings", active: false, href: "/settings" },
+  { icon: BarChart3, label: "Dashboard", href: "/dashboard" },
+  { icon: Target, label: "Citations", href: "/citations" },
+  { icon: TrendingUp, label: "Analytics", href: "/analytics" },
+  { icon: FileText, label: "Reports", href: "/reports" },
+  { icon: Users, label: "Competitors", href: "/competitors" },
+  { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
 export const Sidebar = ({ collapsed, onCollapse }: SidebarProps) => {
+  const location = useLocation();
   return (
     <div className={cn(
       "fixed left-0 top-0 h-screen bg-card border-r border-border z-50 transition-all duration-300",
@@ -59,26 +61,30 @@ export const Sidebar = ({ collapsed, onCollapse }: SidebarProps) => {
 
       {/* Navigation */}
       <nav className="p-4 space-y-2">
-        {navigationItems.map((item) => (
-          <Button
-            key={item.label}
-            variant={item.active ? "default" : "ghost"}
-            className={cn(
-              "w-full justify-start transition-all duration-200",
-              collapsed ? "px-2" : "px-4",
-              item.active && "bg-primary text-primary-foreground shadow-glow"
-            )}
-            size={collapsed ? "sm" : "default"}
-          >
-            <item.icon className={cn(
-              "h-5 w-5",
-              collapsed ? "mr-0" : "mr-3"
-            )} />
-            {!collapsed && (
-              <span className="font-medium">{item.label}</span>
-            )}
-          </Button>
-        ))}
+        {navigationItems.map((item) => {
+          const isActive = location.pathname === item.href;
+          return (
+            <Link key={item.label} to={item.href}>
+              <Button
+                variant={isActive ? "default" : "ghost"}
+                className={cn(
+                  "w-full justify-start transition-all duration-200",
+                  collapsed ? "px-2" : "px-4",
+                  isActive && "bg-primary text-primary-foreground shadow-glow"
+                )}
+                size={collapsed ? "sm" : "default"}
+              >
+                <item.icon className={cn(
+                  "h-5 w-5",
+                  collapsed ? "mr-0" : "mr-3"
+                )} />
+                {!collapsed && (
+                  <span className="font-medium">{item.label}</span>
+                )}
+              </Button>
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Pro Badge */}
