@@ -17,13 +17,32 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    const authHeader = req.headers.get('Authorization')!;
+    // Enhanced auth handling
+    const authHeader = req.headers.get('Authorization');
+    console.log('Auth header present:', !!authHeader);
+    
+    if (!authHeader) {
+      throw new Error('No authorization header provided');
+    }
+
     const token = authHeader.replace('Bearer ', '');
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     
-    if (userError) throw userError;
+    console.log('User auth result:', { 
+      hasUser: !!userData?.user, 
+      userId: userData?.user?.id,
+      error: userError?.message 
+    });
+    
+    if (userError) {
+      console.error('Auth error:', userError);
+      throw new Error(`Authentication failed: ${userError.message}`);
+    }
+    
     const user = userData.user;
-    if (!user) throw new Error('User not authenticated');
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
 
     const method = req.method;
     const url = new URL(req.url);
@@ -37,7 +56,12 @@ serve(async (req) => {
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (getError) throw getError;
+        if (getError) {
+          console.error('Get projects error:', getError);
+          throw getError;
+        }
+        
+        console.log('Retrieved projects:', projects?.length || 0);
         return new Response(JSON.stringify(projects), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -47,8 +71,10 @@ serve(async (req) => {
         
         let requestBody;
         try {
-          requestBody = await req.json();
-          console.log('Request body:', requestBody);
+          const bodyText = await req.text();
+          console.log('Raw request body:', bodyText);
+          requestBody = JSON.parse(bodyText);
+          console.log('Parsed request body:', requestBody);
         } catch (error) {
           console.error('Failed to parse request body:', error);
           throw new Error('Invalid JSON in request body');
@@ -56,42 +82,69 @@ serve(async (req) => {
         
         const { domain, display_name } = requestBody;
         
-        // Get user's organization_id for insertion with better error handling
+        if (!domain?.trim()) {
+          throw new Error('Domain is required');
+        }
+
+        // Get user's profile and organization with detailed logging
+        console.log('Looking up profile for user:', user.id);
         const { data: profile, error: profileError } = await supabaseClient
           .from('profiles')
-          .select('organization_id')
+          .select('organization_id, display_name')
           .eq('user_id', user.id)
           .maybeSingle();
 
-        console.log('Profile query result:', { profile, profileError });
+        console.log('Profile query result:', { 
+          profile, 
+          profileError: profileError?.message,
+          hasOrgId: !!profile?.organization_id 
+        });
 
         if (profileError) {
           console.error('Profile query error:', profileError);
           throw new Error(`Failed to get user profile: ${profileError.message}`);
         }
 
-        if (!profile?.organization_id) {
-          console.error('No profile or organization found for user:', user.id);
-          throw new Error('User organization not found');
+        if (!profile) {
+          console.error('No profile found for user:', user.id);
+          throw new Error('User profile not found. Please contact support.');
         }
 
-        console.log('Creating project with org_id:', profile.organization_id);
+        if (!profile.organization_id) {
+          console.error('No organization found for user profile:', user.id);
+          throw new Error('User organization not found. Please contact support.');
+        }
+
+        console.log('Creating project with:', {
+          domain: domain.trim(),
+          display_name: display_name?.trim() || domain.trim(),
+          organization_id: profile.organization_id
+        });
         
         const { data: newProject, error: createError } = await supabaseClient
           .from('monitored_domains')
           .insert({
-            domain,
-            display_name: display_name || domain,
+            domain: domain.trim(),
+            display_name: display_name?.trim() || domain.trim(),
             organization_id: profile.organization_id,
           })
           .select()
           .single();
 
-        console.log('Insert result:', { newProject, createError });
+        console.log('Insert result:', { 
+          success: !!newProject, 
+          error: createError?.message 
+        });
 
         if (createError) {
-          console.error('Create error:', createError);
-          throw createError;
+          console.error('Create error details:', createError);
+          
+          // Provide more specific error messages
+          if (createError.code === '23505') {
+            throw new Error('A project with this domain already exists in your organization');
+          }
+          
+          throw new Error(`Failed to create project: ${createError.message}`);
         }
         
         return new Response(JSON.stringify(newProject), {
@@ -102,13 +155,19 @@ serve(async (req) => {
       case 'DELETE':
         if (!projectId) throw new Error('Project ID required for deletion');
         
+        console.log('Deleting project:', projectId, 'for user:', user.id);
+        
         // RLS policies will ensure user can only delete their org's domains
         const { error: deleteError } = await supabaseClient
           .from('monitored_domains')
           .delete()
           .eq('id', projectId);
 
-        if (deleteError) throw deleteError;
+        if (deleteError) {
+          console.error('Delete error:', deleteError);
+          throw deleteError;
+        }
+        
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -118,9 +177,12 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error('Projects API error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: error.details || 'No additional details available'
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
+      status: error.message.includes('not authenticated') ? 401 : 400,
     });
   }
 });
