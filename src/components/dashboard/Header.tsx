@@ -17,6 +17,7 @@ export const Header = () => {
       {/* Left Side - Navigation */}
       <div className="flex items-center space-x-6">
         <div className="flex items-center space-x-4">
+          <h1 className="text-xl font-bold text-primary mr-6">CitationTracker Pro</h1>
           <Button variant="ghost" className="font-semibold text-foreground">
             Projects
           </Button>
@@ -31,7 +32,7 @@ export const Header = () => {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search citations, competitors..."
+            placeholder="Search AI citations, competitors..."
             className="pl-10 bg-muted border-0 focus:bg-background transition-colors"
           />
         </div>

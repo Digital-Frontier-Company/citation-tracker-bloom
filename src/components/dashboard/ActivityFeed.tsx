@@ -26,45 +26,45 @@ const activityData: ActivityItem[] = [
   {
     id: "1",
     type: "citation",
-    title: "New citation detected",
-    description: "Your brand was mentioned in 'Top AI Tools for Marketing' article",
+    title: "New AI citation detected",
+    description: "Your content was cited by ChatGPT in response about Answer Engine Optimization",
     timestamp: "2 hours ago",
     status: "positive",
-    source: "TechCrunch"
+    source: "ChatGPT"
   },
   {
     id: "2", 
     type: "competitor",
     title: "Competitor gained citation",
-    description: "CompetitorX was featured in Forbes article about SaaS trends",
+    description: "CompetitorX was cited by Google SGE in 3 new responses about AI search",
     timestamp: "4 hours ago",
     status: "negative",
-    source: "Forbes"
+    source: "Google SGE"
   },
   {
     id: "3",
     type: "alert",
-    title: "Citation quality declined",
-    description: "Recent citation from low-authority domain detected",
+    title: "Citation opportunity missed",
+    description: "Perplexity cited competitors but not your content for target keyword",
     timestamp: "6 hours ago",
     status: "negative"
   },
   {
     id: "4",
     type: "report",
-    title: "Weekly report generated",
-    description: "Your performance summary for this week is ready",
+    title: "Weekly AEO report ready",
+    description: "Your Answer Engine Optimization performance summary is available",
     timestamp: "1 day ago",
     status: "neutral"
   },
   {
     id: "5",
     type: "citation",
-    title: "High-value citation earned",
-    description: "Featured in Harvard Business Review article on digital transformation",
+    title: "High-authority AI citation",
+    description: "Bing Chat cited your content as authoritative source in 12 responses",
     timestamp: "2 days ago",
     status: "positive",
-    source: "Harvard Business Review"
+    source: "Bing Chat"
   }
 ];
 
@@ -187,37 +187,37 @@ export const ActivityFeed = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">New Citations</span>
+              <span className="text-sm text-muted-foreground">AI Citations Today</span>
               <div className="flex items-center space-x-1">
                 <TrendingUp className="h-4 w-4 text-accent" />
-                <span className="font-semibold text-accent">+12</span>
+                <span className="font-semibold text-accent">+23</span>
               </div>
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Quality Score</span>
+              <span className="text-sm text-muted-foreground">Citation Quality</span>
               <span className="font-semibold text-foreground">8.7/10</span>
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Active Alerts</span>
-              <Badge variant="destructive" className="text-xs">2</Badge>
+              <span className="text-sm text-muted-foreground">Missed Opportunities</span>
+              <Badge variant="destructive" className="text-xs">3</Badge>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-primary border-0 shadow-glow text-white">
           <CardContent className="p-6 text-center">
-            <h3 className="font-bold text-lg mb-2">AI Insights Ready</h3>
+            <h3 className="font-bold text-lg mb-2">AEO Insights Ready</h3>
             <p className="text-sm opacity-90 mb-4">
-              Get personalized recommendations to improve your citation strategy
+              Get AI-powered recommendations to increase your citation potential
             </p>
             <Button 
               size="sm" 
               variant="secondary"
               className="bg-white/20 hover:bg-white/30 border-0 text-white"
             >
-              View Insights
+              View AEO Insights
             </Button>
           </CardContent>
         </Card>

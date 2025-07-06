@@ -46,7 +46,7 @@ const KPICard = ({ title, value, change, icon: Icon, trend }: KPICardProps) => {
 
 const kpiData = [
   {
-    title: "Total Citations",
+    title: "Total AI Citations",
     value: "2,847",
     change: 12.5,
     icon: Target,
@@ -60,7 +60,7 @@ const kpiData = [
     trend: "up" as const,
   },
   {
-    title: "Traffic from Citations",
+    title: "Citation-Driven Traffic",
     value: "18,429",
     change: -2.4,
     icon: Users,

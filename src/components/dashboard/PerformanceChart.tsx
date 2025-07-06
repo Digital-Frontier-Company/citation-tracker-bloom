@@ -23,8 +23,8 @@ const chartData: ChartData[] = [
 ];
 
 const toggleOptions = [
-  { id: "citations", label: "Citations", color: "#6366f1" },
-  { id: "traffic", label: "Traffic", color: "#10b981" },
+  { id: "citations", label: "AI Citations", color: "#6366f1" },
+  { id: "traffic", label: "Citation Traffic", color: "#10b981" },
   { id: "conversions", label: "Conversions", color: "#8b5cf6" },
 ] as const;
 
@@ -48,7 +48,7 @@ export const PerformanceChart = () => {
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-bold text-foreground">
-            Performance Trends
+            AI Citation Performance Trends
           </CardTitle>
           
           {/* Interactive Toggles */}
