@@ -7,182 +7,188 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    );
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+  );
 
-    // Enhanced auth handling
+  try {
+    console.log('=== PROJECTS FUNCTION START ===');
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+
+    // Check authentication
     const authHeader = req.headers.get('Authorization');
     console.log('Auth header present:', !!authHeader);
     
     if (!authHeader) {
-      throw new Error('No authorization header provided');
+      console.error('No authorization header');
+      return new Response(JSON.stringify({ error: 'No authorization header provided' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
     }
 
     const token = authHeader.replace('Bearer ', '');
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     
-    console.log('User auth result:', { 
-      hasUser: !!userData?.user, 
-      userId: userData?.user?.id,
-      error: userError?.message 
-    });
-    
     if (userError) {
       console.error('Auth error:', userError);
-      throw new Error(`Authentication failed: ${userError.message}`);
+      return new Response(JSON.stringify({ error: `Authentication failed: ${userError.message}` }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
     }
-    
+
     const user = userData.user;
     if (!user) {
-      throw new Error('User not authenticated');
+      console.error('No user found');
+      return new Response(JSON.stringify({ error: 'User not authenticated' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
     }
 
-    const method = req.method;
-    const url = new URL(req.url);
-    const projectId = url.pathname.split('/').pop();
+    console.log('User authenticated:', user.id);
 
-    switch (method) {
-      case 'GET':
-        // RLS policies will automatically filter to user's organization
-        const { data: projects, error: getError } = await supabaseClient
-          .from('monitored_domains')
-          .select('*')
-          .order('created_at', { ascending: false });
+    if (req.method === 'GET') {
+      console.log('Handling GET request');
+      
+      const { data: projects, error: getError } = await supabaseClient
+        .from('monitored_domains')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-        if (getError) {
-          console.error('Get projects error:', getError);
-          throw getError;
-        }
-        
-        console.log('Retrieved projects:', projects?.length || 0);
-        return new Response(JSON.stringify(projects), {
+      if (getError) {
+        console.error('Get projects error:', getError);
+        return new Response(JSON.stringify({ error: getError.message }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
         });
-
-      case 'POST':
-        console.log('POST request started for user:', user.id);
-        
-        let requestBody;
-        try {
-          const bodyText = await req.text();
-          console.log('Raw request body:', bodyText);
-          requestBody = JSON.parse(bodyText);
-          console.log('Parsed request body:', requestBody);
-        } catch (error) {
-          console.error('Failed to parse request body:', error);
-          throw new Error('Invalid JSON in request body');
-        }
-        
-        const { domain, display_name } = requestBody;
-        
-        if (!domain?.trim()) {
-          throw new Error('Domain is required');
-        }
-
-        // Get user's profile and organization with detailed logging
-        console.log('Looking up profile for user:', user.id);
-        const { data: profile, error: profileError } = await supabaseClient
-          .from('profiles')
-          .select('organization_id, display_name')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        console.log('Profile query result:', { 
-          profile, 
-          profileError: profileError?.message,
-          hasOrgId: !!profile?.organization_id 
-        });
-
-        if (profileError) {
-          console.error('Profile query error:', profileError);
-          throw new Error(`Failed to get user profile: ${profileError.message}`);
-        }
-
-        if (!profile) {
-          console.error('No profile found for user:', user.id);
-          throw new Error('User profile not found. Please contact support.');
-        }
-
-        if (!profile.organization_id) {
-          console.error('No organization found for user profile:', user.id);
-          throw new Error('User organization not found. Please contact support.');
-        }
-
-        console.log('Creating project with:', {
-          domain: domain.trim(),
-          display_name: display_name?.trim() || domain.trim(),
-          organization_id: profile.organization_id
-        });
-        
-        const { data: newProject, error: createError } = await supabaseClient
-          .from('monitored_domains')
-          .insert({
-            domain: domain.trim(),
-            display_name: display_name?.trim() || domain.trim(),
-            organization_id: profile.organization_id,
-          })
-          .select()
-          .single();
-
-        console.log('Insert result:', { 
-          success: !!newProject, 
-          error: createError?.message 
-        });
-
-        if (createError) {
-          console.error('Create error details:', createError);
-          
-          // Provide more specific error messages
-          if (createError.code === '23505') {
-            throw new Error('A project with this domain already exists in your organization');
-          }
-          
-          throw new Error(`Failed to create project: ${createError.message}`);
-        }
-        
-        return new Response(JSON.stringify(newProject), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 201,
-        });
-
-      case 'DELETE':
-        if (!projectId) throw new Error('Project ID required for deletion');
-        
-        console.log('Deleting project:', projectId, 'for user:', user.id);
-        
-        // RLS policies will ensure user can only delete their org's domains
-        const { error: deleteError } = await supabaseClient
-          .from('monitored_domains')
-          .delete()
-          .eq('id', projectId);
-
-        if (deleteError) {
-          console.error('Delete error:', deleteError);
-          throw deleteError;
-        }
-        
-        return new Response(JSON.stringify({ success: true }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-
-      default:
-        throw new Error(`Method ${method} not allowed`);
+      }
+      
+      console.log('Projects retrieved:', projects?.length || 0);
+      return new Response(JSON.stringify(projects || []), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    if (req.method === 'POST') {
+      console.log('Handling POST request');
+      
+      // Parse request body
+      let requestBody;
+      try {
+        const bodyText = await req.text();
+        console.log('Raw body:', bodyText);
+        requestBody = JSON.parse(bodyText);
+        console.log('Parsed body:', requestBody);
+      } catch (parseError) {
+        console.error('Body parse error:', parseError);
+        return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+      
+      const { domain, display_name } = requestBody;
+      
+      if (!domain?.trim()) {
+        console.error('Domain missing or empty');
+        return new Response(JSON.stringify({ error: 'Domain is required and cannot be empty' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+
+      // Get user profile
+      console.log('Getting user profile...');
+      const { data: profile, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Profile error:', profileError);
+        return new Response(JSON.stringify({ error: `Profile error: ${profileError.message}` }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+
+      if (!profile?.organization_id) {
+        console.error('No organization_id in profile:', profile);
+        return new Response(JSON.stringify({ error: 'User profile incomplete - missing organization' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+
+      console.log('Profile found with org_id:', profile.organization_id);
+
+      // Create the project
+      const projectData = {
+        domain: domain.trim(),
+        display_name: display_name?.trim() || domain.trim(),
+        organization_id: profile.organization_id,
+      };
+      
+      console.log('Creating project with data:', projectData);
+      
+      const { data: newProject, error: createError } = await supabaseClient
+        .from('monitored_domains')
+        .insert(projectData)
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Create error:', createError);
+        
+        // Handle specific database errors
+        if (createError.code === '23505') {
+          return new Response(JSON.stringify({ error: 'A project with this domain already exists' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400,
+          });
+        }
+        
+        return new Response(JSON.stringify({ error: `Database error: ${createError.message}` }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+      
+      console.log('Project created successfully:', newProject);
+      return new Response(JSON.stringify(newProject), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 201,
+      });
+    }
+
+    // Handle unsupported methods
+    return new Response(JSON.stringify({ error: `Method ${req.method} not allowed` }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 405,
+    });
+
   } catch (error) {
-    console.error('Projects API error:', error);
+    console.error('=== FUNCTION ERROR ===');
+    console.error('Error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
     return new Response(JSON.stringify({ 
-      error: error.message,
-      details: error.details || 'No additional details available'
+      error: `Server error: ${error.message}`,
+      details: error.stack 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: error.message.includes('not authenticated') ? 401 : 400,
+      status: 500,
     });
   }
 });
