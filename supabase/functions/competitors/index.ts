@@ -31,14 +31,14 @@ serve(async (req) => {
 
     switch (method) {
       case 'GET':
+        // RLS policies will automatically filter to user's accessible competitors
         let query = supabaseClient
           .from('competitors')
           .select(`
             *,
             monitored_domains!inner(
               domain,
-              display_name,
-              organization_id
+              display_name
             )
           `);
 
@@ -57,15 +57,6 @@ serve(async (req) => {
       case 'POST':
         const { competitor_domain, competitor_name, domain_id } = await req.json();
         
-        // Verify domain belongs to user's organization
-        const { data: domain } = await supabaseClient
-          .from('monitored_domains')
-          .select('organization_id, profiles!inner(user_id)')
-          .eq('id', domain_id)
-          .single();
-
-        if (!domain) throw new Error('Domain not found');
-
         const { data: newCompetitor, error: createError } = await supabaseClient
           .from('competitors')
           .insert({
@@ -86,6 +77,7 @@ serve(async (req) => {
         const competitorId = url.pathname.split('/').pop();
         if (!competitorId) throw new Error('Competitor ID required for deletion');
         
+        // RLS policies will ensure user can only delete their org's competitors
         const { error: deleteError } = await supabaseClient
           .from('competitors')
           .delete()

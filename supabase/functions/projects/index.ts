@@ -25,33 +25,16 @@ serve(async (req) => {
     const user = userData.user;
     if (!user) throw new Error('User not authenticated');
 
-    // Get user's organization
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('organization_id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (profileError) {
-      console.error('Profile query error:', profileError);
-      throw new Error('Failed to get user profile');
-    }
-
-    if (!profile?.organization_id) {
-      console.error('No profile or organization found for user:', user.id);
-      throw new Error('User organization not found');
-    }
-
     const method = req.method;
     const url = new URL(req.url);
     const projectId = url.pathname.split('/').pop();
 
     switch (method) {
       case 'GET':
+        // RLS policies will automatically filter to user's organization
         const { data: projects, error: getError } = await supabaseClient
           .from('monitored_domains')
           .select('*')
-          .eq('organization_id', profile.organization_id)
           .order('created_at', { ascending: false });
 
         if (getError) throw getError;
@@ -61,6 +44,17 @@ serve(async (req) => {
 
       case 'POST':
         const { domain, display_name } = await req.json();
+        
+        // Get user's organization_id for insertion
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!profile?.organization_id) {
+          throw new Error('User organization not found');
+        }
         
         const { data: newProject, error: createError } = await supabaseClient
           .from('monitored_domains')
@@ -81,11 +75,11 @@ serve(async (req) => {
       case 'DELETE':
         if (!projectId) throw new Error('Project ID required for deletion');
         
+        // RLS policies will ensure user can only delete their org's domains
         const { error: deleteError } = await supabaseClient
           .from('monitored_domains')
           .delete()
-          .eq('id', projectId)
-          .eq('organization_id', profile.organization_id);
+          .eq('id', projectId);
 
         if (deleteError) throw deleteError;
         return new Response(JSON.stringify({ success: true }), {

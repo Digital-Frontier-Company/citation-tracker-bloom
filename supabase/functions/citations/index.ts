@@ -32,15 +32,14 @@ serve(async (req) => {
     const limit = parseInt(url.searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
+    // RLS policies will automatically filter citations to user's accessible domains
     let query = supabaseClient
       .from('citations')
       .select(`
         *,
         monitored_domains!inner(
           domain,
-          display_name,
-          organization_id,
-          profiles!inner(user_id)
+          display_name
         )
       `)
       .range(offset, offset + limit - 1)
@@ -57,11 +56,10 @@ serve(async (req) => {
     const { data: citations, error: getError } = await query;
     if (getError) throw getError;
 
-    // Get total count for pagination
+    // Get total count for pagination using a separate query
     let countQuery = supabaseClient
       .from('citations')
-      .select('*', { count: 'exact', head: true })
-      .eq('monitored_domains.profiles.user_id', user.id);
+      .select('*', { count: 'exact', head: true });
 
     if (ai_engine && ai_engine !== 'all') {
       countQuery = countQuery.eq('ai_engine', ai_engine);
