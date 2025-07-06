@@ -32,10 +32,29 @@ const Projects = () => {
 
   const addProjectMutation = useMutation({
     mutationFn: async (projectData: { domain: string; display_name?: string }) => {
+      // Make sure user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('User not authenticated');
+      }
+
+      console.log('Calling projects function with data:', projectData);
+      
       const { data, error } = await supabase.functions.invoke('projects', {
-        body: projectData
+        method: 'POST', // Explicitly specify POST method
+        body: JSON.stringify(projectData), // Explicitly stringify the body
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}` // Explicitly include auth token
+        }
       });
-      if (error) throw error;
+      
+      console.log('Function response:', { data, error });
+      
+      if (error) {
+        console.error('Function error:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
