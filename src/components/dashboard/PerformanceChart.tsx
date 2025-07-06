@@ -3,12 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { cn } from "@/lib/utils";
-import { ChartDataPoint } from "@/types/dashboard";
+import { PerformanceTrends } from "@/types/dashboard";
 
 type ChartDataType = "citations" | "traffic" | "conversions";
 
 interface PerformanceChartProps {
-  data: ChartDataPoint[];
+  data: PerformanceTrends;
 }
 
 const toggleOptions = [
@@ -31,6 +31,14 @@ export const PerformanceChart = ({ data }: PerformanceChartProps) => {
     }
     setActiveToggles(newToggles);
   };
+
+  // Transform the data to match the chart format
+  const chartData = data.citations.map((item, index) => ({
+    date: item.date,
+    citations: item.value,
+    traffic: data.traffic[index]?.value || 0,
+    conversions: data.conversions[index]?.value || 0
+  }));
 
   return (
     <Card className="bg-gradient-card border-0 shadow-custom-md">
@@ -69,10 +77,10 @@ export const PerformanceChart = ({ data }: PerformanceChartProps) => {
       <CardContent>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
               <XAxis 
-                dataKey="month" 
+                dataKey="date" 
                 stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
               />

@@ -1,10 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Target, BarChart3, Users, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { KPIData } from "@/types/dashboard";
+import { KPIs } from "@/types/dashboard";
 
 interface KPICardsProps {
-  data: KPIData[];
+  data: {
+    kpis: KPIs;
+    lastUpdatedAt: string;
+  };
 }
 
 interface KPICardProps {
@@ -58,9 +61,40 @@ const KPICard = ({ title, value, change, iconName, trend }: KPICardProps) => {
 };
 
 export const KPICards = ({ data }: KPICardsProps) => {
+  const kpiData = [
+    {
+      title: "Total AI Citations",
+      value: data.kpis.totalCitations.value.toLocaleString(),
+      change: data.kpis.totalCitations.change * 100, // Convert to percentage
+      icon: "Target",
+      trend: data.kpis.totalCitations.changeDirection === "up" ? "up" : "down"
+    },
+    {
+      title: "Share of Voice",
+      value: `${(data.kpis.shareOfVoice.value * 100).toFixed(1)}%`,
+      change: data.kpis.shareOfVoice.change * 100,
+      icon: "BarChart3", 
+      trend: data.kpis.shareOfVoice.changeDirection === "up" ? "up" : "down"
+    },
+    {
+      title: "Citation-Driven Traffic",
+      value: data.kpis.trafficFromCitations.value.toLocaleString(),
+      change: data.kpis.trafficFromCitations.change * 100,
+      icon: "Users",
+      trend: data.kpis.trafficFromCitations.changeDirection === "up" ? "up" : "down"
+    },
+    {
+      title: "Citation Quality Score",
+      value: `${data.kpis.citationQualityScore.value}/100`,
+      change: data.kpis.citationQualityScore.change,
+      icon: "Award",
+      trend: data.kpis.citationQualityScore.changeDirection === "up" ? "up" : "down"
+    }
+  ];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {data.map((kpi, index) => (
+      {kpiData.map((kpi, index) => (
         <div 
           key={kpi.title} 
           className="animate-fade-in"
@@ -71,7 +105,7 @@ export const KPICards = ({ data }: KPICardsProps) => {
             value={kpi.value}
             change={kpi.change}
             iconName={kpi.icon}
-            trend={kpi.trend}
+            trend={kpi.trend as "up" | "down"}
           />
         </div>
       ))}

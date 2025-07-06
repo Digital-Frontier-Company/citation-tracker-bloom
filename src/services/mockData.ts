@@ -1,5 +1,107 @@
-import { DashboardData, DateRangeOption } from "@/types/dashboard";
+import { DashboardAPIResponse, DateRangeOption, DashboardData } from "@/types/dashboard";
 
+// New API format mock data
+export const getMockAPIData = (dateRange: DateRangeOption): Promise<DashboardAPIResponse> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        data: {
+          lastUpdatedAt: "2025-07-15T10:45:00Z",
+          kpis: {
+            totalCitations: {
+              value: 248,
+              change: 0.12,
+              changeDirection: "up"
+            },
+            shareOfVoice: {
+              value: 0.42,
+              change: 0.08,
+              changeDirection: "up"
+            },
+            trafficFromCitations: {
+              value: 5400,
+              change: 0.24,
+              changeDirection: "up"
+            },
+            citationQualityScore: {
+              value: 86,
+              change: -3,
+              changeDirection: "down"
+            }
+          },
+          performanceTrends: {
+            citations: [
+              { date: "2025-01-01", value: 20 },
+              { date: "2025-01-08", value: 42 },
+              { date: "2025-01-15", value: 35 },
+              { date: "2025-01-22", value: 45 },
+              { date: "2025-01-29", value: 60 },
+              { date: "2025-02-05", value: 75 },
+              { date: "2025-02-12", value: 82 }
+            ],
+            traffic: [
+              { date: "2025-01-01", value: 800 },
+              { date: "2025-01-08", value: 1500 },
+              { date: "2025-01-15", value: 1200 },
+              { date: "2025-01-22", value: 1800 },
+              { date: "2025-01-29", value: 2500 },
+              { date: "2025-02-05", value: 4300 },
+              { date: "2025-02-12", value: 5400 }
+            ],
+            conversions: [
+              { date: "2025-01-01", value: 5 },
+              { date: "2025-01-08", value: 12 },
+              { date: "2025-01-15", value: 9 },
+              { date: "2025-01-22", value: 15 },
+              { date: "2025-01-29", value: 22 },
+              { date: "2025-02-05", value: 31 },
+              { date: "2025-02-12", value: 38 }
+            ]
+          },
+          recentActivity: [
+            {
+              id: "evt_1",
+              type: "new_citation",
+              title: "New citation detected",
+              description: "'How to Optimize Content for AI Search' on Google SGE",
+              timestamp: "2025-07-15T10:35:00Z"
+            },
+            {
+              id: "evt_2",
+              type: "competitor_alert",
+              title: "Competitor alert",
+              description: "TechInsider gained 5 new citations for 'AI SEO'",
+              timestamp: "2025-07-15T09:45:00Z"
+            },
+            {
+              id: "evt_3",
+              type: "traffic_increase",
+              title: "Traffic increase detected",
+              description: "+32% traffic from UX Pilot citations",
+              timestamp: "2025-07-15T07:45:00Z"
+            },
+            {
+              id: "evt_4",
+              type: "new_source",
+              title: "New AI source added",
+              description: "Now tracking citations on Perplexity.ai",
+              timestamp: "2025-07-15T05:45:00Z"
+            },
+            {
+              id: "evt_5",
+              type: "citation_lost",
+              title: "Citation lost",
+              description: "'AI Marketing Guide' no longer cited on UX Pilot",
+              timestamp: "2025-07-14T18:00:00Z"
+            }
+          ]
+        }
+      });
+    }, 1000);
+  });
+};
+
+// Legacy mock data for backward compatibility
 const generateMockKPIs = (dateRange: DateRangeOption) => {
   const multiplier = dateRange === "last_7_days" ? 0.3 : 
                     dateRange === "last_30_days" ? 1 : 
@@ -99,7 +201,6 @@ const mockActivities = [
 
 export const getMockDashboardData = (dateRange: DateRangeOption): Promise<DashboardData> => {
   return new Promise((resolve) => {
-    // Simulate API delay
     setTimeout(() => {
       resolve({
         kpis: generateMockKPIs(dateRange),

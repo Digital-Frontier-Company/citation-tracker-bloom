@@ -11,32 +11,37 @@ import {
   ExternalLink 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ActivityItem } from "@/types/dashboard";
+import { ActivityEvent } from "@/types/dashboard";
 
 interface ActivityFeedProps {
-  activities: ActivityItem[];
+  activities: ActivityEvent[];
 }
 
-const getIcon = (type: string, status: string) => {
+const getIcon = (type: string) => {
   switch (type) {
-    case "citation":
-      return status === "positive" ? CheckCircle : Target;
-    case "competitor":
+    case "new_citation":
+      return CheckCircle;
+    case "competitor_alert":
       return TrendingUp;
-    case "alert":
+    case "traffic_increase":
+      return TrendingUp;
+    case "new_source":
+      return Target;
+    case "citation_lost":
       return AlertCircle;
-    case "report":
-      return Eye;
     default:
       return Target;
   }
 };
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "positive":
+const getStatusColor = (type: string) => {
+  switch (type) {
+    case "new_citation":
+    case "traffic_increase":
+    case "new_source":
       return "text-accent";
-    case "negative":
+    case "competitor_alert":
+    case "citation_lost":
       return "text-destructive";
     default:
       return "text-muted-foreground";
@@ -45,17 +50,32 @@ const getStatusColor = (status: string) => {
 
 const getBadgeVariant = (type: string) => {
   switch (type) {
-    case "citation":
+    case "new_citation":
       return "default";
-    case "competitor":
+    case "competitor_alert":
       return "secondary";
-    case "alert":
-      return "destructive";
-    case "report":
+    case "traffic_increase":
+      return "default";
+    case "new_source":
       return "outline";
+    case "citation_lost":
+      return "destructive";
     default:
       return "secondary";
   }
+};
+
+const formatTimestamp = (timestamp: string) => {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffHours < 1) return "Just now";
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  if (diffDays === 1) return "1 day ago";
+  return `${diffDays} days ago`;
 };
 
 export const ActivityFeed = ({ activities }: ActivityFeedProps) => {
@@ -77,7 +97,7 @@ export const ActivityFeed = ({ activities }: ActivityFeedProps) => {
           
           <CardContent className="space-y-4">
             {activities.map((item, index) => {
-              const Icon = getIcon(item.type, item.status);
+              const Icon = getIcon(item.type);
               
               return (
                 <div 
@@ -89,7 +109,7 @@ export const ActivityFeed = ({ activities }: ActivityFeedProps) => {
                 >
                   <Avatar className="h-10 w-10 bg-muted">
                     <AvatarFallback className="bg-primary/10">
-                      <Icon className={cn("h-5 w-5", getStatusColor(item.status))} />
+                      <Icon className={cn("h-5 w-5", getStatusColor(item.type))} />
                     </AvatarFallback>
                   </Avatar>
                   
@@ -99,7 +119,7 @@ export const ActivityFeed = ({ activities }: ActivityFeedProps) => {
                         {item.title}
                       </h4>
                       <Badge variant={getBadgeVariant(item.type)} className="text-xs">
-                        {item.type}
+                        {item.type.replace('_', ' ')}
                       </Badge>
                     </div>
                     
@@ -109,14 +129,8 @@ export const ActivityFeed = ({ activities }: ActivityFeedProps) => {
                     
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
-                        {item.timestamp}
+                        {formatTimestamp(item.timestamp)}
                       </span>
-                      {item.source && (
-                        <div className="flex items-center space-x-1 text-xs text-primary">
-                          <span>{item.source}</span>  
-                          <ExternalLink className="h-3 w-3" />
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>

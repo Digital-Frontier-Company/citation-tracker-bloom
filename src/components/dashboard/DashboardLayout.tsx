@@ -16,17 +16,17 @@ export const DashboardLayout = () => {
   const [dateRange, setDateRange] = useState<DateRangeOption>("last_30_days");
   const { toast } = useToast();
   
-  const { data, isLoading, error, refetch } = useDashboardData(dateRange);
+  const { data: apiResponse, isLoading, error, refetch } = useDashboardData(dateRange);
 
   useEffect(() => {
-    if (error && !data) {
+    if (error && !apiResponse) {
       toast({
         title: "Connection Issue",
         description: "Using demo data while API is unavailable.",
         variant: "default",
       });
     }
-  }, [error, data, toast]);
+  }, [error, apiResponse, toast]);
 
   return (
     <div className="min-h-screen bg-dashboard-bg">
@@ -48,7 +48,7 @@ export const DashboardLayout = () => {
           </div>
 
           {/* Error State - Only show if no data at all */}
-          {error && !data && (
+          {error && !apiResponse && (
             <ErrorState onRetry={() => refetch()} />
           )}
 
@@ -68,21 +68,21 @@ export const DashboardLayout = () => {
           )}
 
           {/* Data Loaded State - Show data even if there was an error (fallback to mock data) */}
-          {data && (
+          {apiResponse && (
             <>
               {/* KPI Cards Section */}
               <div className="animate-slide-up">
-                <KPICards data={data.kpis} />
+                <KPICards data={apiResponse.data} />
               </div>
               
               {/* Performance Chart Section */}
               <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
-                <PerformanceChart data={data.chartData} />
+                <PerformanceChart data={apiResponse.data.performanceTrends} />
               </div>
               
               {/* Activity Feed Section */}
               <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                <ActivityFeed activities={data.activities} />
+                <ActivityFeed activities={apiResponse.data.recentActivity} />
               </div>
             </>
           )}
