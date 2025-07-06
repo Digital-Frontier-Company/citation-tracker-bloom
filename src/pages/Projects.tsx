@@ -135,6 +135,83 @@ const Projects = () => {
     project.display_name?.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
+  // Add this temporarily to debug the database
+  const debugDatabase = async () => {
+    try {
+      console.log('=== DATABASE DEBUG START ===');
+      
+      // Check session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('Session:', { 
+        hasSession: !!session, 
+        userId: session?.user?.id,
+        error: sessionError 
+      });
+
+      if (!session?.user) {
+        console.error('No session found');
+        return;
+      }
+
+      // Check profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+      
+      console.log('Profile:', { profile, error: profileError });
+
+      if (profile?.organization_id) {
+        // Check organization
+        const { data: org, error: orgError } = await supabase
+          .from('organizations')
+          .select('*')
+          .eq('id', profile.organization_id)
+          .single();
+        
+        console.log('Organization:', { org, error: orgError });
+      }
+
+      // Check existing projects
+      const { data: projects, error: projectsError } = await supabase
+        .from('monitored_domains')
+        .select('*');
+      
+      console.log('Existing projects:', { projects, error: projectsError });
+
+      // Test a direct insert (bypass the function)
+      if (profile?.organization_id) {
+        console.log('Testing direct insert...');
+        const testData = {
+          domain: 'test-domain-' + Date.now() + '.com',
+          display_name: 'Test Domain',
+          organization_id: profile.organization_id,
+        };
+        
+        const { data: testProject, error: testError } = await supabase
+          .from('monitored_domains')
+          .insert(testData)
+          .select()
+          .single();
+        
+        console.log('Direct insert test:', { testProject, error: testError });
+        
+        // Clean up test data if it worked
+        if (testProject) {
+          await supabase
+            .from('monitored_domains')
+            .delete()
+            .eq('id', testProject.id);
+          console.log('Test project cleaned up');
+        }
+      }
+
+    } catch (error) {
+      console.error('Debug error:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-dashboard-bg">
       <Sidebar collapsed={sidebarCollapsed} onCollapse={setSidebarCollapsed} />
@@ -148,46 +225,51 @@ const Projects = () => {
               <h1 className="text-3xl font-bold text-foreground">Projects</h1>
               <p className="text-muted-foreground">Manage the domains you're tracking</p>
             </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Project
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New Project</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="domain">Domain *</Label>
-                    <Input
-                      id="domain"
-                      placeholder="example.com"
-                      value={newDomain}
-                      onChange={(e) => setNewDomain(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="display_name">Display Name (optional)</Label>
-                    <Input
-                      id="display_name"
-                      placeholder="My Website"
-                      value={newDisplayName}
-                      onChange={(e) => setNewDisplayName(e.target.value)}
-                    />
-                  </div>
-                  <Button 
-                    onClick={handleAddProject} 
-                    disabled={!newDomain.trim() || addProjectMutation.isPending}
-                    className="w-full"
-                  >
-                    {addProjectMutation.isPending ? "Adding..." : "Add Project"}
+            <div className="flex gap-2">
+              <Button onClick={debugDatabase} variant="outline">
+                Debug Database
+              </Button>
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Project
                   </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Project</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="domain">Domain *</Label>
+                      <Input
+                        id="domain"
+                        placeholder="example.com"
+                        value={newDomain}
+                        onChange={(e) => setNewDomain(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="display_name">Display Name (optional)</Label>
+                      <Input
+                        id="display_name"
+                        placeholder="My Website"
+                        value={newDisplayName}
+                        onChange={(e) => setNewDisplayName(e.target.value)}
+                      />
+                    </div>
+                    <Button 
+                      onClick={handleAddProject} 
+                      disabled={!newDomain.trim() || addProjectMutation.isPending}
+                      className="w-full"
+                    >
+                      {addProjectMutation.isPending ? "Adding..." : "Add Project"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           <div className="flex items-center space-x-4">
