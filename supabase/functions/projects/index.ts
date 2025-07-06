@@ -26,13 +26,19 @@ serve(async (req) => {
     if (!user) throw new Error('User not authenticated');
 
     // Get user's organization
-    const { data: profile } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('organization_id')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Profile query error:', profileError);
+      throw new Error('Failed to get user profile');
+    }
 
     if (!profile?.organization_id) {
+      console.error('No profile or organization found for user:', user.id);
       throw new Error('User organization not found');
     }
 
