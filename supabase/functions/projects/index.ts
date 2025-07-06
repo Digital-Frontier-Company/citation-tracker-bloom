@@ -44,8 +44,17 @@ serve(async (req) => {
 
       case 'POST':
         console.log('POST request started for user:', user.id);
-        const { domain, display_name } = await req.json();
-        console.log('Request body:', { domain, display_name });
+        
+        let requestBody;
+        try {
+          requestBody = await req.json();
+          console.log('Request body:', requestBody);
+        } catch (error) {
+          console.error('Failed to parse request body:', error);
+          throw new Error('Invalid JSON in request body');
+        }
+        
+        const { domain, display_name } = requestBody;
         
         // Get user's organization_id for insertion with better error handling
         const { data: profile, error: profileError } = await supabaseClient
