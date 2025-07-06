@@ -1,7 +1,7 @@
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 
-const Index = () => {
+const Dashboard = () => {
   return <DashboardLayout />;
 };
 
-export default Index;
+export default Dashboard;
