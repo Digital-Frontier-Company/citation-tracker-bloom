@@ -84,7 +84,7 @@ const Citations = () => {
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {citations?.map((citation: any) => (
+                  {citations?.citations?.map((citation: any) => (
                     <Card key={citation.id} className="bg-gradient-card border-0 shadow-custom-md hover:shadow-custom-lg transition-all duration-300">
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between mb-4">

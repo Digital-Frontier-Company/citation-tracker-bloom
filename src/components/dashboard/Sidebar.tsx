@@ -20,6 +20,7 @@ interface SidebarProps {
 
 const navigationItems = [
   { icon: BarChart3, label: "Dashboard", href: "/dashboard" },
+  { icon: Target, label: "Projects", href: "/projects" },
   { icon: Target, label: "Citations", href: "/citations" },
   { icon: TrendingUp, label: "Analytics", href: "/analytics" },
   { icon: FileText, label: "Reports", href: "/reports" },
