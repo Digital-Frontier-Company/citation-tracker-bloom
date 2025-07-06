@@ -43,18 +43,30 @@ serve(async (req) => {
         });
 
       case 'POST':
+        console.log('POST request started for user:', user.id);
         const { domain, display_name } = await req.json();
+        console.log('Request body:', { domain, display_name });
         
-        // Get user's organization_id for insertion
-        const { data: profile } = await supabaseClient
+        // Get user's organization_id for insertion with better error handling
+        const { data: profile, error: profileError } = await supabaseClient
           .from('profiles')
           .select('organization_id')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
+
+        console.log('Profile query result:', { profile, profileError });
+
+        if (profileError) {
+          console.error('Profile query error:', profileError);
+          throw new Error(`Failed to get user profile: ${profileError.message}`);
+        }
 
         if (!profile?.organization_id) {
+          console.error('No profile or organization found for user:', user.id);
           throw new Error('User organization not found');
         }
+
+        console.log('Creating project with org_id:', profile.organization_id);
         
         const { data: newProject, error: createError } = await supabaseClient
           .from('monitored_domains')
@@ -66,7 +78,13 @@ serve(async (req) => {
           .select()
           .single();
 
-        if (createError) throw createError;
+        console.log('Insert result:', { newProject, createError });
+
+        if (createError) {
+          console.error('Create error:', createError);
+          throw createError;
+        }
+        
         return new Response(JSON.stringify(newProject), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 201,
