@@ -11,6 +11,7 @@ import { Header } from "@/components/dashboard/Header";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { checkAndFixUserProfile } from "@/utils/profileUtils";
 
 const Projects = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -99,13 +100,28 @@ const Projects = () => {
     }
   });
 
-  const handleAddProject = () => {
+  const handleAddProject = async () => {
     if (!newDomain.trim()) return;
     
-    addProjectMutation.mutate({
-      domain: newDomain.trim(),
-      display_name: newDisplayName.trim() || undefined
-    });
+    try {
+      // First, ensure user profile is set up correctly
+      console.log('Checking user profile before adding project...');
+      await checkAndFixUserProfile();
+      console.log('Profile check completed successfully');
+      
+      // Now proceed with adding the project
+      addProjectMutation.mutate({
+        domain: newDomain.trim(),
+        display_name: newDisplayName.trim() || undefined
+      });
+    } catch (error: any) {
+      console.error('Profile check failed:', error);
+      toast({
+        title: "Profile Setup Error",
+        description: error.message || "Failed to set up user profile. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteProject = (projectId: string) => {
